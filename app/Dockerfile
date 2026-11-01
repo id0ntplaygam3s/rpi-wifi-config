@@ -7,6 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+# dbus-python's build system looks for dbus-run-session during test config.
+# Provide a minimal stub so the build can proceed (tests are skipped in pip).
+RUN printf '#!/bin/sh\nexec "$@"\n' > /usr/local/bin/dbus-run-session \
+    && chmod +x /usr/local/bin/dbus-run-session
+
 WORKDIR /app
 
 COPY requirements.txt .
