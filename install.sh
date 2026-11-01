@@ -171,22 +171,6 @@ if ! dpkg --compare-versions "$POLKIT_VERSION" ge "0.105"; then
 fi
 success "polkit version $POLKIT_VERSION"
 
-# Verify repo is complete
-for f in \
-    "$SCRIPT_DIR/docker-compose.yml" \
-    "$SCRIPT_DIR/app/Dockerfile" \
-    "$SCRIPT_DIR/app/requirements.txt" \
-    "$SCRIPT_DIR/app/app.py" \
-    "$SCRIPT_DIR/app/templates/index.html" \
-    "$SCRIPT_DIR/polkit/10-wifi-config.rules"
-do
-    if [ ! -f "$f" ]; then
-        fail "Missing file: $f
-    The repo appears to be incomplete. Try: git clone again."
-    fi
-done
-success "Repo is complete"
-
 echo ""
 info "All compatibility checks passed."
 echo ""
@@ -282,12 +266,12 @@ else
     done <<< "$WIFI_CONNS"
 fi
 
-# ── Phase 6: Build and start container ───────────────────────────────────────
+# ── Phase 6: Pull image and start container ──────────────────────────────────
 
 echo ""
-info "Building Docker image..."
+info "Pulling Docker image from Docker Hub..."
 cd "$SCRIPT_DIR"
-docker compose build
+docker pull id0ntplaygam3s/rpi-wifi-config:latest
 
 echo ""
 info "Starting container..."
@@ -326,7 +310,7 @@ echo ""
 echo "  To view logs:   docker compose logs wifi-config"
 echo "  To stop:        docker compose down"
 echo "  To restart:     docker compose up -d"
-echo "  To update:      git pull && bash install.sh"
+echo "  To update:      cd ~/rpi-wifi-config && bash install.sh"
 echo ""
 echo "  ── Dashboard entries ────────────────────────"
 echo ""

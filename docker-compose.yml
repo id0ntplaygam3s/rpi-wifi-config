@@ -1,10 +1,16 @@
 services:
   wifi-config:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
     image: id0ntplaygam3s/rpi-wifi-config:latest
     container_name: wifi-config
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:8090:8090"
+    volumes:
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+    env_file:
+      - .env
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     ports:
       - "0.0.0.0:8090:8090"

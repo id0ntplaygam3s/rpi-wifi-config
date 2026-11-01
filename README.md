@@ -4,23 +4,26 @@ A lightweight web interface for managing Wi-Fi connections on a Raspberry Pi run
 
 Runs as a Docker container. Communicates with NetworkManager over D-Bus. Does not require any privileged container flags.
 
+---
+
 ## Quick Start
-
-### Option 1: Docker Hub (Recommended)
-
-```bash
-docker pull id0ntplaygam3s/rpi-wifi-config:latest
-```
-
-Then set up your `.env` file and run the installer script (see below).
-
-### Option 2: Build from Source
 
 ```bash
 git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
 cd rpi-wifi-config
 bash install.sh
 ```
+
+That's it. The installer will:
+
+1. Check your Pi is compatible (OS, Wi-Fi, Docker, polkit, etc.)
+2. Set up NetworkManager and disable conflicts
+3. Generate credentials for the web UI
+4. Install the polkit rule (so the container can manage Wi-Fi without sudo)
+5. Pull the Docker image from Docker Hub
+6. Start the container
+
+Access the UI at `http://<PI_IP>:8090`
 
 ---
 
@@ -59,69 +62,32 @@ On Bullseye, the installer will automatically install/enable NetworkManager and 
 
 ## Installation
 
-### With Docker Hub image
-
 ```bash
 git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
 cd rpi-wifi-config
 bash install.sh
 ```
 
-### With local build
-
-```bash
-git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
-cd rpi-wifi-config
-docker compose build
-bash install.sh
-```
-
-The installer will:
-
-1. Verify system compatibility and that the repo is complete
-2. Prompt for web UI credentials and save them to `.env`
-3. Record the Pi hostname for web UI display
-4. Install the polkit rule (substituting your actual username)
-5. Set ownership on any existing Wi-Fi connection profiles
-6. Build the Docker image and start the container
-7. Print ready-to-paste entries for common self-hosted dashboards
-
-To update after a `git pull`:
-
-```bash
-git pull
-bash install.sh
-```
-
-The installer is idempotent — credentials are preserved if `.env` already exists.
+The installer is idempotent — re-running it updates the image and preserves your credentials.
 
 ---
 
 ## Docker
 
-### Pull from Docker Hub
+The installer pulls the pre-built image from Docker Hub. No local build required.
 
 ```bash
 docker pull id0ntplaygam3s/rpi-wifi-config:latest
 ```
 
-### Build locally
+The image is built for both `arm/v7` and `arm64` via GitHub Actions.
+
+To manage the container manually:
 
 ```bash
-docker build -t rpi-wifi-config ./app
-```
-
-### Run manually
-
-```bash
-docker run -d \
-  --name wifi-config \
-  --restart unless-stopped \
-  -p 0.0.0.0:8090:8090 \
-  -v /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
-  --env-file .env \
-  --security-opt no-new-privileges:true \
-  id0ntplaygam3s/rpi-wifi-config:latest
+docker compose up -d      # Start
+docker compose down       # Stop
+docker compose logs -f    # View logs
 ```
 
 ---
@@ -197,19 +163,18 @@ rpi-wifi-config/
 ├── install.sh                  # Run to install or update
 ├── uninstall.sh                # Run to remove
 ├── README.md
-├── docker-compose.yml
+├── docker-compose.yml          # Uses pre-built image from Docker Hub
+├── .env                        # Created by installer (not in git)
 ├── app/
-│   ├── Dockerfile
+│   ├── Dockerfile              # Used for building the image (CI)
 │   ├── .dockerignore
 │   ├── requirements.txt
 │   ├── app.py
 │   └── templates/
 │       └── index.html          # Hostname is rendered from HOSTNAME_DISPLAY
 └── polkit/
-    └── 10-wifi-config.rules    # Contains "pi" placeholder — substituted by installer
+    └── 10-wifi-config.rules    # Template — username substituted by installer
 ```
-
-`.env` is created by the installer and is excluded from git.
 
 ---
 
