@@ -192,6 +192,23 @@ if [ "$BUILD_OPTION" = "2" ]; then
     USE_LOCAL_BUILD=true
     export BUILD_LOCAL=true
     info "Building from source..."
+
+    # Verify repo is complete for local build
+    for f in \
+        "$SCRIPT_DIR/app/Dockerfile" \
+        "$SCRIPT_DIR/app/requirements.txt" \
+        "$SCRIPT_DIR/app/app.py" \
+        "$SCRIPT_DIR/app/templates/index.html" \
+        "$SCRIPT_DIR/polkit/10-wifi-config.rules"
+    do
+        if [ ! -f "$f" ]; then
+            fail "Missing file: $f
+    The repo appears to be incomplete. Either:
+    1. Re-clone: git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
+    2. Or choose option 1 to pull from Docker Hub"
+        fi
+    done
+    success "All source files present"
 else
     USE_LOCAL_BUILD=false
     info "Using pre-built image from Docker Hub"
