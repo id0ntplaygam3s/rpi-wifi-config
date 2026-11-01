@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-dbus \
+    dbus-bin \
     libdbus-1-dev \
     libglib2.0-dev \
     gcc \
