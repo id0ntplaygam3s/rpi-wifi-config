@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dbus \
     libdbus-1-dev \
     libglib2.0-dev \
@@ -12,7 +12,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user matching host pi uid
 RUN useradd -u 1000 -m appuser
 USER appuser
 

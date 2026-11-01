@@ -1,6 +1,9 @@
 services:
   wifi-config:
-    build: ./app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: id0ntplaygam3s/rpi-wifi-config:latest
     container_name: wifi-config
     restart: unless-stopped
     ports:
