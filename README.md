@@ -1,8 +1,26 @@
-# wifi-config
+# rpi-wifi-config
 
 A lightweight web interface for managing Wi-Fi connections on a Raspberry Pi running Raspberry Pi OS Bullseye or Bookworm (Debian 11/12) with NetworkManager.
 
 Runs as a Docker container. Communicates with NetworkManager over D-Bus. Does not require any privileged container flags.
+
+## Quick Start
+
+### Option 1: Docker Hub (Recommended)
+
+```bash
+docker pull id0ntplaygam3s/rpi-wifi-config:latest
+```
+
+Then set up your `.env` file and run the installer script (see below).
+
+### Option 2: Build from Source
+
+```bash
+git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
+cd rpi-wifi-config
+bash install.sh
+```
 
 ---
 
@@ -22,8 +40,8 @@ Runs as a Docker container. Communicates with NetworkManager over D-Bus. Does no
 The following must be true on the target Pi before running the installer:
 
 - Raspberry Pi OS Bullseye or Bookworm (Debian 11/12)
-- Docker and Docker Compose installed
-- At least one Wi-Fi interface present (for example `wlan0` or `wlan1`) and not rfkill-blocked
+- Docker installed and your user in the `docker` group
+- At least one Wi-Fi interface present (e.g. `wlan0` or `wlan1`) and not rfkill-blocked
 
 To verify your Pi is compatible, run:
 
@@ -41,9 +59,20 @@ On Bullseye, the installer will automatically install/enable NetworkManager and 
 
 ## Installation
 
+### With Docker Hub image
+
 ```bash
-git clone https://github.com/yourusername/wifi-config.git
-cd wifi-config
+git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
+cd rpi-wifi-config
+bash install.sh
+```
+
+### With local build
+
+```bash
+git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
+cd rpi-wifi-config
+docker compose build
 bash install.sh
 ```
 
@@ -70,12 +99,29 @@ The installer is idempotent — credentials are preserved if `.env` already exis
 
 ## Docker
 
-Docker must be installed and your user must be in the `docker` group:
+### Pull from Docker Hub
 
 ```bash
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-# log out and back in, then run install.sh
+docker pull id0ntplaygam3s/rpi-wifi-config:latest
+```
+
+### Build locally
+
+```bash
+docker build -t rpi-wifi-config ./app
+```
+
+### Run manually
+
+```bash
+docker run -d \
+  --name wifi-config \
+  --restart unless-stopped \
+  -p 0.0.0.0:8090:8090 \
+  -v /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
+  --env-file .env \
+  --security-opt no-new-privileges:true \
+  id0ntplaygam3s/rpi-wifi-config:latest
 ```
 
 ---
@@ -87,8 +133,8 @@ The installer prompts for a username and password, saved to `.env` (chmod 600). 
 To change credentials after installation:
 
 ```bash
-nano ~/wifi-config/.env
-cd ~/wifi-config && docker compose up -d
+nano ~/rpi-wifi-config/.env
+cd ~/rpi-wifi-config && docker compose up -d
 ```
 
 ---
@@ -114,7 +160,7 @@ Stops the container, removes the polkit rule, and removes `.env`. The repo is le
 To fully remove everything:
 
 ```bash
-cd .. && rm -rf wifi-config/
+cd .. && rm -rf rpi-wifi-config/
 ```
 
 ---
@@ -145,19 +191,22 @@ When a connection attempt is made, the app snapshots the current active connecti
 ## File structure
 
 ```
-wifi-config/
-├── install.sh                      # Run to install or update
-├── uninstall.sh                    # Run to remove
+rpi-wifi-config/
+├── .github/workflows/
+│   └── docker-publish.yml      # CI: builds & pushes to Docker Hub
+├── install.sh                  # Run to install or update
+├── uninstall.sh                # Run to remove
 ├── README.md
 ├── docker-compose.yml
 ├── app/
 │   ├── Dockerfile
+│   ├── .dockerignore
 │   ├── requirements.txt
 │   ├── app.py
 │   └── templates/
-│       └── index.html              # Hostname is rendered from HOSTNAME_DISPLAY
+│       └── index.html          # Hostname is rendered from HOSTNAME_DISPLAY
 └── polkit/
-    └── 10-wifi-config.rules        # Contains "pi" placeholder — substituted by installer
+    └── 10-wifi-config.rules    # Contains "pi" placeholder — substituted by installer
 ```
 
 `.env` is created by the installer and is excluded from git.
@@ -181,8 +230,8 @@ The installer does this automatically for connections that exist at install time
 The `.env` file is missing or `WIFI_PASS` is empty:
 
 ```bash
-cat ~/wifi-config/.env
-cd ~/wifi-config && docker compose up -d
+cat ~/rpi-wifi-config/.env
+cd ~/rpi-wifi-config && docker compose up -d
 ```
 
 **Scan returns no results**
@@ -209,6 +258,18 @@ docker compose up -d
 ## Notes for Raspberry Pi 4B
 
 The Pi 4B works with this project on both Bullseye and Bookworm. On Bullseye, `install.sh` migrates networking control from `dhcpcd` to NetworkManager.
+
+---
+
+## CI/CD
+
+This project uses GitHub Actions to automatically build and push multi-architecture Docker images (ARMv7 + ARM64) to Docker Hub on every push to `main`.
+
+To set up Docker Hub authentication for CI:
+
+1. Generate an access token at [Docker Hub → Settings → Security](https://hub.docker.com/settings/security)
+2. Add the token as a GitHub secret named `DOCKERHUB_TOKEN`
+3. Add your Docker Hub username as a GitHub secret named `DOCKERHUB_USERNAME`
 
 ---
 
