@@ -9,6 +9,10 @@ env:
   IMAGE_NAME: rpi-wifi-config
   DOCKER_USER: id0ntplaygam3s
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
