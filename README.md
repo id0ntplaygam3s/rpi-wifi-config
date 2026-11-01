@@ -18,7 +18,6 @@ Runs as a Docker container. Communicates with NetworkManager over D-Bus. Does no
 - [Security notes](#security-notes)
 - [Troubleshooting](#troubleshooting)
 - [API](#api)
-- [CI/CD](#cicd)
 - [File structure](#file-structure)
 
 ---
@@ -217,18 +216,6 @@ Leave `passphrase` empty or omit it for open networks.
 
 ---
 
-## CI/CD
-
-This project uses GitHub Actions to automatically build and push multi-architecture Docker images (ARMv7 + ARM64) to Docker Hub on every push to `main`.
-
-To set up Docker Hub authentication for CI:
-
-1. Generate an access token at [Docker Hub → Settings → Security](https://hub.docker.com/settings/security)
-2. Add the token as a GitHub secret named `DOCKERHUB_TOKEN`
-3. Add your Docker Hub username as a GitHub secret named `DOCKERHUB_USERNAME`
-
----
-
 ## File structure
 
 ```
@@ -241,7 +228,7 @@ rpi-wifi-config/
 ├── docker-compose.yml          # Uses pre-built image from Docker Hub
 ├── .env                        # Created by installer (not in git)
 ├── app/
-│   ├── Dockerfile              # Used for building the image (CI)
+│   ├── Dockerfile              # Base image for Docker Hub
 │   ├── .dockerignore
 │   ├── requirements.txt
 │   ├── app.py
