@@ -17,11 +17,12 @@ bash install.sh
 That's it. The installer will:
 
 1. Check your Pi is compatible (OS, Wi-Fi, Docker, polkit, etc.)
-2. Set up NetworkManager and disable conflicts
-3. Generate credentials for the web UI
-4. Install the polkit rule (so the container can manage Wi-Fi without sudo)
-5. Pull the Docker image from Docker Hub
-6. Start the container
+2. Ask whether to pull the pre-built image from Docker Hub (recommended) or build from source
+3. Set up NetworkManager and disable conflicts
+4. Generate credentials for the web UI
+5. Install the polkit rule (so the container can manage Wi-Fi without sudo)
+6. Build/pull the Docker image
+7. Start the container
 
 Access the UI at `http://<PI_IP>:8090`
 
@@ -74,7 +75,7 @@ The installer is idempotent — re-running it updates the image and preserves yo
 
 ## Docker
 
-The installer pulls the pre-built image from Docker Hub. No local build required.
+The installer pulls the pre-built image from Docker Hub by default. You can choose to build from source locally during installation.
 
 ```bash
 docker pull id0ntplaygam3s/rpi-wifi-config:latest
@@ -88,6 +89,13 @@ To manage the container manually:
 docker compose up -d      # Start
 docker compose down       # Stop
 docker compose logs -f    # View logs
+```
+
+To build locally without the installer:
+
+```bash
+BUILD_LOCAL=true docker compose build
+BUILD_LOCAL=true docker compose up -d
 ```
 
 ---

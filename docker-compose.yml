@@ -1,6 +1,5 @@
 services:
   wifi-config:
-    image: id0ntplaygam3s/rpi-wifi-config:latest
     container_name: wifi-config
     restart: unless-stopped
     ports:
@@ -11,16 +10,7 @@ services:
       - .env
     security_opt:
       - no-new-privileges:true
-    restart: unless-stopped
-    ports:
-      - "0.0.0.0:8090:8090"
-    volumes:
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
-    environment:
-      - DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
-      - SECRET_KEY=${SECRET_KEY}
-      - WIFI_USER=${WIFI_USER:-admin}
-      - WIFI_PASS=${WIFI_PASS}
-      - HOSTNAME_DISPLAY=${HOSTNAME_DISPLAY}
-    security_opt:
-      - no-new-privileges:true
+    ${BUILD_LOCAL:+build:}
+    ${BUILD_LOCAL:+  context: ./app}
+    ${BUILD_LOCAL:+  dockerfile: Dockerfile}
+    ${BUILD_LOCAL:-image: id0ntplaygam3s/rpi-wifi-config:latest}

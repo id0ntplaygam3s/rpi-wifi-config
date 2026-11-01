@@ -175,7 +175,30 @@ echo ""
 info "All compatibility checks passed."
 echo ""
 
-# ── Phase 2: Credentials ──────────────────────────────────────────────────────
+# ── Phase 2: Choose install method ────────────────────────────────────────────
+
+echo "================================================"
+echo "  Choose install method"
+echo "================================================"
+echo ""
+echo "  1) Pull pre-built image from Docker Hub (recommended)"
+echo "  2) Build from source locally"
+echo ""
+
+read -p "  Select [1/2]: " BUILD_OPTION
+BUILD_OPTION="${BUILD_OPTION:-1}"
+
+if [ "$BUILD_OPTION" = "2" ]; then
+    USE_LOCAL_BUILD=true
+    export BUILD_LOCAL=true
+    info "Building from source..."
+else
+    USE_LOCAL_BUILD=false
+    info "Using pre-built image from Docker Hub"
+fi
+echo ""
+
+# ── Phase 3: Credentials ──────────────────────────────────────────────────────
 
 ENV_FILE="$SCRIPT_DIR/.env"
 
@@ -266,12 +289,18 @@ else
     done <<< "$WIFI_CONNS"
 fi
 
-# ── Phase 6: Pull image and start container ──────────────────────────────────
+# ── Phase 7: Build/pull image and start container ────────────────────────────
 
 echo ""
-info "Pulling Docker image from Docker Hub..."
 cd "$SCRIPT_DIR"
-docker pull id0ntplaygam3s/rpi-wifi-config:latest
+
+if [ "$USE_LOCAL_BUILD" = "true" ]; then
+    info "Building Docker image from source..."
+    docker compose build
+else
+    info "Pulling Docker image from Docker Hub..."
+    docker pull id0ntplaygam3s/rpi-wifi-config:latest
+fi
 
 echo ""
 info "Starting container..."
