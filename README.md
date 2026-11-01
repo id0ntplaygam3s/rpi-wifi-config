@@ -6,6 +6,23 @@ Runs as a Docker container. Communicates with NetworkManager over D-Bus. Does no
 
 ---
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Docker](#docker)
+- [Uninstalling](#uninstalling)
+- [How it works](#how-it-works)
+- [Security notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
+- [API](#api)
+- [CI/CD](#cicd)
+- [File structure](#file-structure)
+
+---
+
 ## Quick Start
 
 ```bash
@@ -14,17 +31,7 @@ cd rpi-wifi-config
 bash install.sh
 ```
 
-That's it. The installer will:
-
-1. Check your Pi is compatible (OS, Wi-Fi, Docker, polkit, etc.)
-2. Ask whether to pull the pre-built image from Docker Hub (recommended) or build from source
-3. Set up NetworkManager and disable conflicts
-4. Generate credentials for the web UI
-5. Install the polkit rule (so the container can manage Wi-Fi without sudo)
-6. Build/pull the Docker image
-7. Start the container
-
-Access the UI at `http://<PI_IP>:8090`
+That's it. The installer checks your Pi, sets up NetworkManager, generates credentials, installs the polkit rule, and starts the container. Access the UI at `http://<PI_IP>:8090`.
 
 ---
 
@@ -41,13 +48,11 @@ Access the UI at `http://<PI_IP>:8090`
 
 ## Requirements
 
-The following must be true on the target Pi before running the installer:
-
 - Raspberry Pi OS Bullseye or Bookworm (Debian 11/12)
 - Docker installed and your user in the `docker` group
 - At least one Wi-Fi interface present (e.g. `wlan0` or `wlan1`) and not rfkill-blocked
 
-To verify your Pi is compatible, run:
+To verify:
 
 ```bash
 cat /etc/os-release
@@ -55,9 +60,7 @@ ip -o link show | grep -E '^[0-9]+: wl'
 rfkill list wifi
 ```
 
-Expected: OS is Bullseye/Bookworm, a `wl*` interface exists, and Wi-Fi is not blocked.
-
-On Bullseye, the installer will automatically install/enable NetworkManager and disable dhcpcd so the app can manage Wi-Fi over D-Bus.
+On Bullseye, the installer will automatically install/enable NetworkManager and disable dhcpcd.
 
 ---
 
@@ -68,6 +71,16 @@ git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
 cd rpi-wifi-config
 bash install.sh
 ```
+
+The installer will:
+
+1. Check system compatibility (OS, Wi-Fi, Docker, polkit, D-Bus)
+2. Ask whether to pull the pre-built image from Docker Hub (recommended) or build from source locally
+3. Set up NetworkManager and disable dhcpcd conflicts
+4. Prompt for web UI credentials (saved to `.env`, chmod 600)
+5. Install the polkit rule (substituting your username)
+6. Fix permissions on existing Wi-Fi connection profiles
+7. Build/pull the Docker image and start the container
 
 The installer is idempotent — re-running it updates the image and preserves your credentials.
 
@@ -97,29 +110,6 @@ To build locally without the installer:
 BUILD_LOCAL=true docker compose build
 BUILD_LOCAL=true docker compose up -d
 ```
-
----
-
-## Credentials
-
-The installer prompts for a username and password, saved to `.env` (chmod 600). These are used for HTTP Basic Auth on the web UI.
-
-To change credentials after installation:
-
-```bash
-nano ~/rpi-wifi-config/.env
-cd ~/rpi-wifi-config && docker compose up -d
-```
-
----
-
-## Accessing the UI
-
-```
-http://<PI_IP>:8090
-```
-
-The installer prints the exact URL at the end, along with ready-to-paste entries for Dashy, Fenrus, Flame, Heimdall, Homarr, Homepage, Homer, and Organizr.
 
 ---
 
@@ -159,30 +149,6 @@ When a connection attempt is made, the app snapshots the current active connecti
 - The app never touches eth0 or any non-wireless connection
 - Only one connection attempt can run at a time (threading lock)
 - Port 8090 is bound to `0.0.0.0` — reachable on your LAN. Do not forward this port through your router.
-
----
-
-## File structure
-
-```
-rpi-wifi-config/
-├── .github/workflows/
-│   └── docker-publish.yml      # CI: builds & pushes to Docker Hub
-├── install.sh                  # Run to install or update
-├── uninstall.sh                # Run to remove
-├── README.md
-├── docker-compose.yml          # Uses pre-built image from Docker Hub
-├── .env                        # Created by installer (not in git)
-├── app/
-│   ├── Dockerfile              # Used for building the image (CI)
-│   ├── .dockerignore
-│   ├── requirements.txt
-│   ├── app.py
-│   └── templates/
-│       └── index.html          # Hostname is rendered from HOSTNAME_DISPLAY
-└── polkit/
-    └── 10-wifi-config.rules    # Template — username substituted by installer
-```
 
 ---
 
@@ -228,24 +194,6 @@ docker compose up -d
 
 ---
 
-## Notes for Raspberry Pi 4B
-
-The Pi 4B works with this project on both Bullseye and Bookworm. On Bullseye, `install.sh` migrates networking control from `dhcpcd` to NetworkManager.
-
----
-
-## CI/CD
-
-This project uses GitHub Actions to automatically build and push multi-architecture Docker images (ARMv7 + ARM64) to Docker Hub on every push to `main`.
-
-To set up Docker Hub authentication for CI:
-
-1. Generate an access token at [Docker Hub → Settings → Security](https://hub.docker.com/settings/security)
-2. Add the token as a GitHub secret named `DOCKERHUB_TOKEN`
-3. Add your Docker Hub username as a GitHub secret named `DOCKERHUB_USERNAME`
-
----
-
 ## API
 
 All endpoints require Basic Auth except `/health`.
@@ -266,3 +214,39 @@ All endpoints require Basic Auth except `/health`.
 ```
 
 Leave `passphrase` empty or omit it for open networks.
+
+---
+
+## CI/CD
+
+This project uses GitHub Actions to automatically build and push multi-architecture Docker images (ARMv7 + ARM64) to Docker Hub on every push to `main`.
+
+To set up Docker Hub authentication for CI:
+
+1. Generate an access token at [Docker Hub → Settings → Security](https://hub.docker.com/settings/security)
+2. Add the token as a GitHub secret named `DOCKERHUB_TOKEN`
+3. Add your Docker Hub username as a GitHub secret named `DOCKERHUB_USERNAME`
+
+---
+
+## File structure
+
+```
+rpi-wifi-config/
+├── .github/workflows/
+│   └── docker-publish.yml      # CI: builds & pushes to Docker Hub
+├── install.sh                  # Run to install or update
+├── uninstall.sh                # Run to remove
+├── README.md
+├── docker-compose.yml          # Uses pre-built image from Docker Hub
+├── .env                        # Created by installer (not in git)
+├── app/
+│   ├── Dockerfile              # Used for building the image (CI)
+│   ├── .dockerignore
+│   ├── requirements.txt
+│   ├── app.py
+│   └── templates/
+│       └── index.html          # Hostname is rendered from HOSTNAME_DISPLAY
+└── polkit/
+    └── 10-wifi-config.rules    # Template — username substituted by installer
+```
