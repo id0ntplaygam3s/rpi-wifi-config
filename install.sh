@@ -194,6 +194,7 @@ if [ "$BUILD_OPTION" = "2" ]; then
     info "Building from source..."
 
     # Verify repo is complete for local build
+    MISSING_FILES=()
     for f in \
         "$SCRIPT_DIR/app/Dockerfile" \
         "$SCRIPT_DIR/app/requirements.txt" \
@@ -202,13 +203,26 @@ if [ "$BUILD_OPTION" = "2" ]; then
         "$SCRIPT_DIR/polkit/10-wifi-config.rules"
     do
         if [ ! -f "$f" ]; then
-            fail "Missing file: $f
-    The repo appears to be incomplete. Either:
-    1. Re-clone: git clone https://github.com/id0ntplaygam3s/rpi-wifi-config.git
-    2. Or choose option 1 to pull from Docker Hub"
+            MISSING_FILES+=("$f")
         fi
     done
-    success "All source files present"
+
+    if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+        warn "Incomplete repo detected. Auto-cloning to fix..."
+        TEMP_DIR=$(mktemp -d)
+        git clone --depth 1 https://github.com/id0ntplaygam3s/rpi-wifi-config "$TEMP_DIR/rpi-wifi-config" 2>/dev/null
+
+        for f in "${MISSING_FILES[@]}"; do
+            REL_PATH="${f#$SCRIPT_DIR/}"
+            cp "$TEMP_DIR/rpi-wifi-config/$REL_PATH" "$f"
+            success "Restored: $REL_PATH"
+        done
+
+        rm -rf "$TEMP_DIR"
+        success "Repo fixed — all source files present"
+    else
+        success "All source files present"
+    fi
 else
     USE_LOCAL_BUILD=false
     info "Using pre-built image from Docker Hub"
